@@ -5,50 +5,53 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 
-public class ResultSceneController : MonoBehaviour {
+namespace SkyHigh {
 
-    // スコア
-    private ParameterController parameterController;
+    public class ResultSceneController : MonoBehaviour {
 
-    private float startTime;
-    private float waitTime = 10f;
+        // スコア
+        private ParameterController parameterController;
 
-    // Use this for initialization
-    void Start () {
-        // スタートタイム
-        startTime = Time.time;
+        private float startTime;
+        private float waitTime = 10f;
 
-        // パラメーター
-        parameterController = ParameterController.Instance;
+        // Use this for initialization
+        void Start () {
+            // スタートタイム
+            startTime = Time.time;
 
-        // プレイヤー
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
+            // パラメーター
+            parameterController = ParameterController.Instance;
 
-        // カメラ角度を修正
-        Vector3 rotate = (-1) * parameterController.getCameraRotate();
-        player.transform.Rotate(rotate);
+            // プレイヤー
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
 
-        // タイムを取得
-        float time = parameterController.getTime();
-        GameObject resultText = GameObject.FindGameObjectWithTag("ResultText");
-        Debug.Log(resultText);
-        var builder = new StringBuilder();
-        builder.Append(time);
-        builder.Append(" s");
-        resultText.GetComponent<Text>().text = builder.ToString();
+            // カメラ角度を修正
+            Vector3 rotate = (-1) * parameterController.getCameraRotate();
+            player.transform.Rotate(rotate);
 
-    }
-    
-    // Update is called once per frame
-    void Update () {
+            // タイムを取得
+            float time = parameterController.getTime();
+            GameObject resultText = GameObject.FindGameObjectWithTag("ResultText");
+            Debug.Log(resultText);
+            var builder = new StringBuilder();
+            builder.Append(time);
+            builder.Append(" s");
+            resultText.GetComponent<Text>().text = builder.ToString();
 
-        if ((Time.time - startTime) > waitTime) {
-            if (GvrControllerInput.ClickButtonUp) {
-                SceneManager.LoadScene("Start");
-            }
+        }
+        
+        // Update is called once per frame
+        void Update () {
 
-            if (Input.GetKey(KeyCode.Z)) {
-                SceneManager.LoadScene("Start");
+            if ((Time.time - startTime) > waitTime) {
+                if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
+                    SceneManager.LoadScene("Start");
+                }
+
+                if (Input.GetKey(KeyCode.Z)) {
+                    SceneManager.LoadScene("Start");
+                }
             }
         }
     }

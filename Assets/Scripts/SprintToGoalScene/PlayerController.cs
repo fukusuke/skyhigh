@@ -239,8 +239,8 @@ namespace SprintToGoal {
                 TestPCMode();
             }
 
-            if (GvrControllerInput.ClickButton
-                && GvrControllerInput.AppButton) {
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)
+                && OVRInput.GetDown(OVRInput.Button.One)) {
                 resetNumber += 1;
 
                 if (resetNumber > 120) {
@@ -273,7 +273,7 @@ namespace SprintToGoal {
         // プレイヤーのスピードを調整
         void manageSpeedRate()
         {
-            if (GvrControllerInput.ClickButton
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)
                 && forwardRate <= maxForwardRate) {
                 forwardRate += upDownRate;
 
@@ -282,7 +282,7 @@ namespace SprintToGoal {
                 }
             }
 
-            if (GvrControllerInput.AppButton
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)
                 && forwardRate >= minimumForwardRate) {
                 playeSpeedDown();
             }

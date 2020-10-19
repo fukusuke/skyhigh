@@ -33,7 +33,7 @@ public class StartSceneController : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
         if ((Time.time - startTime) > waitTime) {
-            if (GvrControllerInput.ClickButtonUp) {
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
                 changeSceneToGame();
             }
 

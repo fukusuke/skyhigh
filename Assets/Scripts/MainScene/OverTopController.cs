@@ -2,29 +2,31 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OverTopController : MonoBehaviour {
+namespace SkyHigh {
 
-    private PlayerController playerController;
+    public class OverTopController : MonoBehaviour {
 
-    void Start()
-    {
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        playerController = player.GetComponent<PlayerController>();
-    }
+        private PlayerController playerController;
 
-    void OnTriggerEnter (Collider other)
-    {
-        if (other.gameObject.name == "Player") {
-            playerController.setMoveType("overTopBefore");
+        void Start()
+        {
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            playerController = player.GetComponent<PlayerController>();
+        }
 
-            StartCoroutine("endOverTop");
+        void OnTriggerEnter (Collider other)
+        {
+            if (other.gameObject.name == "Player") {
+                playerController.setMoveType("overTopBefore");
+
+                StartCoroutine("endOverTop");
+            }
+        }
+
+        private IEnumerator endOverTop()
+        {
+            yield return new WaitForSeconds(3.0f);
+            playerController.setMoveType("overTopAfter");
         }
     }
-
-    private IEnumerator endOverTop()
-    {
-        yield return new WaitForSeconds(3.0f);
-        playerController.setMoveType("overTopAfter");
-    }
 }
-    

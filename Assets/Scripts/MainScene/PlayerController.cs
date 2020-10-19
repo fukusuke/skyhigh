@@ -3,206 +3,226 @@ using UnityEngine.Assertions;
 using System.Collections;
 using UnityEngine.SceneManagement;
 
-public class PlayerController : MonoBehaviour {
+namespace SkyHigh {
 
-    [SerializeField]
-    private bool debugMode = false;
+    public class PlayerController : MonoBehaviour {
 
-    // 動きのタイプ
-    public string moveType = "start";
+        [SerializeField]
+        private bool debugMode = false;
 
-    // 進む速度
-    private float forwardRate = 0.3f;
-    private float maxForwardRate = 1.5f;
-    private float minimumForwardRate = 0.1f;
+        // 動きのタイプ
+        public string moveType = "start";
 
-    // プレイヤーの身長
-    private float playerHeight = 1.65f;
+        // 進む速度
+        private float forwardRate = 0.3f;
+        private float maxForwardRate = 1.5f;
+        private float minimumForwardRate = 0.1f;
 
-    // MyGameManager
-    private MyGameManager myGameManager;
-    private TimeController myTimeController;
-    private ParameterController parameterController;
+        // プレイヤーの身長
+        private float playerHeight = 1.65f;
 
-    // ゲーム時間
-    private float timeLimit = 110.0f;
+        // MyGameManager
+        private MyGameManager myGameManager;
+        private TimeController myTimeController;
+        private ParameterController parameterController;
 
-    // particle system
-    [SerializeField]
-    public ParticleSystem particleSystemGreen;
-    [SerializeField]
-    public ParticleSystem particleSystemRed;
-
-    private ParticleSystem.EmissionModule emGreenObj;
-    private ParticleSystem.EmissionModule emRedObj;
-
-    void Start() {
-        GameObject gameManager = GameObject.FindGameObjectWithTag("GameManager");
-        myGameManager = gameManager.GetComponent<MyGameManager>();
-
-        GameObject timeObject = GameObject.FindGameObjectWithTag("TimeObject");
-        myTimeController = timeObject.GetComponent<TimeController>();
-
-        // パラメーター
-        parameterController = ParameterController.Instance;
+        // ゲーム時間
+        private float timeLimit = 110.0f;
 
         // particle system
-        emGreenObj = particleSystemGreen.emission;
-        emRedObj = particleSystemRed.emission;
-    }
+        [SerializeField]
+        public ParticleSystem particleSystemGreen;
+        [SerializeField]
+        public ParticleSystem particleSystemRed;
 
-    void Update() {
-        // プレイヤーの移動
-        switch (moveType) {
+        private ParticleSystem.EmissionModule emGreenObj;
+        private ParticleSystem.EmissionModule emRedObj;
 
-            case "start":
-                messageManagement();
-                break;
+        void Start() {
+            GameObject gameManager = GameObject.FindGameObjectWithTag("GameManager");
+            myGameManager = gameManager.GetComponent<MyGameManager>();
 
-            case "normalBefore":
-                 // 残り1分告知
-                StartCoroutine("setLimitMessage");
+            GameObject timeObject = GameObject.FindGameObjectWithTag("TimeObject");
+            myTimeController = timeObject.GetComponent<TimeController>();
 
-                // ゲーム終了告知
-                StartCoroutine("setCountDown");
+            // パラメーター
+            parameterController = ParameterController.Instance;
 
-                this.setMoveType("normal");
-                break;
+            // particle system
+            emGreenObj = particleSystemGreen.emission;
+            emRedObj = particleSystemRed.emission;
+        }
 
-            case "normal":
-                // 前方へ進む
-                moveToForward();
+        void Update() {
+            // プレイヤーの移動
+            switch (moveType) {
 
-                // プレイヤースピード調整
-                manageSpeedRate();
-                break;
+                case "start":
+                    messageManagement();
+                    break;
 
-            case "overTopBefore":
-                // 飛ぶ前に動作
-                myGameManager.startUpWindSound();
+                case "normalBefore":
+                     // 残り1分告知
+                    StartCoroutine("setLimitMessage");
 
-                this.setMoveType("overTop");
-                break;
+                    // ゲーム終了告知
+                    StartCoroutine("setCountDown");
 
-            case "overTop":
-                moveToTop();
-                break;
+                    this.setMoveType("normal");
+                    break;
 
-            case "overTopAfter":
-                // 飛んだ後に動作
-                myGameManager.startDownWindSound();
+                case "normal":
+                    // 前方へ進む
+                    moveToForward();
 
-                this.setMoveType("normal");
-                break;
+                    // プレイヤースピード調整
+                    manageSpeedRate();
+                    break;
 
-            case "end":
-                myGameManager.startWhistleSound();
-                StartCoroutine("changeScene");
-                this.setMoveType("endAfter");
-                break;
+                case "overTopBefore":
+                    // 飛ぶ前に動作
+                    myGameManager.startUpWindSound();
 
-            case "endAfter":
+                    this.setMoveType("overTop");
+                    break;
 
-                // 前方へ進む
-                moveToForward();
+                case "overTop":
+                    moveToTop();
+                    break;
 
-                // プレイヤースピード調整
+                case "overTopAfter":
+                    // 飛んだ後に動作
+                    myGameManager.startDownWindSound();
+
+                    this.setMoveType("normal");
+                    break;
+
+                case "end":
+                    myGameManager.startWhistleSound();
+                    StartCoroutine("changeScene");
+                    this.setMoveType("endAfter");
+                    break;
+
+                case "endAfter":
+
+                    // 前方へ進む
+                    moveToForward();
+
+                    // プレイヤースピード調整
+                    playeSpeedDown();
+                    break;
+            }
+
+            if (debugMode) {
+                TestPCMode();
+            }
+
+            // 画面外に出ないように調節
+            warpPlayer();
+        }
+
+        void messageManagement()
+        {
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)) {
+                myGameManager.nextMessage();
+            }
+
+            if (Input.GetKey(KeyCode.Z)) {
+                myGameManager.nextMessage();
+            }
+        }
+
+        void warpPlayer()
+        {
+            float playeAreeLimit = 1500f;
+            Vector3 currentPosition = transform.position;
+            float x = currentPosition.x;
+            float z = currentPosition.z;
+
+            if (x > playeAreeLimit) {
+                currentPosition.x = -1 * playeAreeLimit;
+                transform.position = currentPosition;
+            }
+            if (x < (-1 * playeAreeLimit)) {
+                currentPosition.x = playeAreeLimit;
+                transform.position = currentPosition;
+            }
+
+            if (z > playeAreeLimit) {
+                currentPosition.z = -1 * playeAreeLimit;
+                transform.position = currentPosition;
+            }
+            if (z < (-1 * playeAreeLimit)) {
+                currentPosition.z = playeAreeLimit;
+                transform.position = currentPosition;
+            }
+        }
+
+        void moveToForward()
+        {
+            Vector3 forward = Camera.main.transform.forward * forwardRate;
+            forward.y = 0.0f;
+            transform.position += forward;
+
+            // 地面へ落とす
+            if (transform.position.y > playerHeight) {
+                transform.position += new Vector3(0.0f, -0.4f, 0.0f);
+            }
+        }
+
+        void moveToTop()
+        {
+            // 上空へ移動
+            transform.position += new Vector3(0.0f, 0.667f, 0.0f);
+        }
+
+        // プレイヤーのスピードを調整
+        void manageSpeedRate()
+        {
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger)
+                && forwardRate <= maxForwardRate) {
+                forwardRate += 0.1f;
+
+                if (forwardRate > maxForwardRate) {
+                    forwardRate = maxForwardRate;
+                }
+            }
+
+            if (OVRInput.GetDown(OVRInput.Button.SecondaryIndexTrigger) 
+                && forwardRate >= minimumForwardRate) {
                 playeSpeedDown();
-                break;
-        }
-
-        if (debugMode) {
-            TestPCMode();
-        }
-
-        // 画面外に出ないように調節
-        warpPlayer();
-    }
-
-    void messageManagement()
-    {
-        if (GvrControllerInput.ClickButtonUp) {
-            myGameManager.nextMessage();
-        }
-
-        if (Input.GetKey(KeyCode.Z)) {
-            myGameManager.nextMessage();
-        }
-    }
-
-    void warpPlayer()
-    {
-        float playeAreeLimit = 1500f;
-        Vector3 currentPosition = transform.position;
-        float x = currentPosition.x;
-        float z = currentPosition.z;
-
-        if (x > playeAreeLimit) {
-            currentPosition.x = -1 * playeAreeLimit;
-            transform.position = currentPosition;
-        }
-        if (x < (-1 * playeAreeLimit)) {
-            currentPosition.x = playeAreeLimit;
-            transform.position = currentPosition;
-        }
-
-        if (z > playeAreeLimit) {
-            currentPosition.z = -1 * playeAreeLimit;
-            transform.position = currentPosition;
-        }
-        if (z < (-1 * playeAreeLimit)) {
-            currentPosition.z = playeAreeLimit;
-            transform.position = currentPosition;
-        }
-    }
-
-    void moveToForward()
-    {
-        Vector3 forward = Camera.main.transform.forward * forwardRate;
-        forward.y = 0.0f;
-        transform.position += forward;
-
-        // 地面へ落とす
-        if (transform.position.y > playerHeight) {
-            transform.position += new Vector3(0.0f, -0.4f, 0.0f);
-        }
-    }
-
-    void moveToTop()
-    {
-        // 上空へ移動
-        transform.position += new Vector3(0.0f, 0.667f, 0.0f);
-    }
-
-    // プレイヤーのスピードを調整
-    void manageSpeedRate()
-    {
-        if (GvrControllerInput.ClickButtonUp
-            && forwardRate <= maxForwardRate) {
-            forwardRate += 0.1f;
-
-            if (forwardRate > maxForwardRate) {
-                forwardRate = maxForwardRate;
             }
-        }
 
-        if (GvrControllerInput.AppButtonUp 
-            && forwardRate >= minimumForwardRate) {
-            playeSpeedDown();
-        }
+            // Debug
+            if (Input.GetKey(KeyCode.Z)
+                && forwardRate <= maxForwardRate) {
+                forwardRate += 0.1f;
 
-        // Debug
-        if (Input.GetKey(KeyCode.Z)
-            && forwardRate <= maxForwardRate) {
-            forwardRate += 0.1f;
-
-            if (forwardRate > maxForwardRate) {
-                forwardRate = maxForwardRate;
+                if (forwardRate > maxForwardRate) {
+                    forwardRate = maxForwardRate;
+                }
             }
+
+            if (Input.GetKey(KeyCode.X)
+                && forwardRate >= minimumForwardRate) {
+                forwardRate -= 0.1f;
+
+                if (forwardRate < minimumForwardRate) {
+                    forwardRate = minimumForwardRate;
+                }
+            }
+
+            // Particle 調整
+            manageParticleSystem();
         }
 
-        if (Input.GetKey(KeyCode.X)
-            && forwardRate >= minimumForwardRate) {
+        private void manageParticleSystem()
+        {
+            emRedObj.rate = new ParticleSystem.MinMaxCurve(forwardRate * 200);
+        }
+
+        private void playeSpeedDown()
+        {
             forwardRate -= 0.1f;
 
             if (forwardRate < minimumForwardRate) {
@@ -210,101 +230,84 @@ public class PlayerController : MonoBehaviour {
             }
         }
 
-        // Particle 調整
-        manageParticleSystem();
-    }
-
-    private void manageParticleSystem()
-    {
-        emRedObj.rate = new ParticleSystem.MinMaxCurve(forwardRate * 200);
-    }
-
-    private void playeSpeedDown()
-    {
-        forwardRate -= 0.1f;
-
-        if (forwardRate < minimumForwardRate) {
-            forwardRate = minimumForwardRate;
-        }
-    }
-
-    public void setMoveType(string moveType)
-    {
-        // Debug.Log("seted type:" + moveType);
-        this.moveType = moveType;
-    }
-
-    public string getMoveType(string moveType)
-    {
-        return this.moveType;
-    }
-
-    void TestPCMode()
-    {
-        if (Input.GetKey(KeyCode.LeftArrow)) {
-            gameObject.transform.Rotate(new Vector3(0, -1.0f, 0));
+        public void setMoveType(string moveType)
+        {
+            // Debug.Log("seted type:" + moveType);
+            this.moveType = moveType;
         }
 
-        if (Input.GetKey(KeyCode.RightArrow)) {
-            gameObject.transform.Rotate(new Vector3(0, 1.0f, 0));
+        public string getMoveType(string moveType)
+        {
+            return this.moveType;
         }
-    }
 
-    /****************************************************************/
+        void TestPCMode()
+        {
+            if (Input.GetKey(KeyCode.LeftArrow)) {
+                gameObject.transform.Rotate(new Vector3(0, -1.0f, 0));
+            }
 
-    private IEnumerator setLimitMessage()
-    {
-        yield return new WaitForSeconds (60.0f);
+            if (Input.GetKey(KeyCode.RightArrow)) {
+                gameObject.transform.Rotate(new Vector3(0, 1.0f, 0));
+            }
+        }
 
-        myTimeController.SetMessageAndDelete("残り1分", 3.0f);
-    }
+        /****************************************************************/
 
-    private IEnumerator setCountDown()
-    {
-        yield return new WaitForSeconds (timeLimit);
+        private IEnumerator setLimitMessage()
+        {
+            yield return new WaitForSeconds (60.0f);
 
-        myTimeController.SetMessage("10");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessageAndDelete("残り1分", 3.0f);
+        }
 
-        myTimeController.SetMessage("9");
-        yield return new WaitForSeconds (1.0f);
+        private IEnumerator setCountDown()
+        {
+            yield return new WaitForSeconds (timeLimit);
 
-        myTimeController.SetMessage("8");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("10");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("7");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("9");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("6");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("8");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("5");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("7");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("4");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("6");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("3");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("5");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("2");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("4");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("1");
-        yield return new WaitForSeconds (1.0f);
+            myTimeController.SetMessage("3");
+            yield return new WaitForSeconds (1.0f);
 
-        myTimeController.SetMessage("終了");
+            myTimeController.SetMessage("2");
+            yield return new WaitForSeconds (1.0f);
 
-        // 終了
-        this.setMoveType("end");
-    }
+            myTimeController.SetMessage("1");
+            yield return new WaitForSeconds (1.0f);
 
-    private IEnumerator changeScene()
-    {
-        yield return new WaitForSeconds (3.0f);
+            myTimeController.SetMessage("終了");
 
-        parameterController.setCameraRotate(Camera.main.transform.localEulerAngles);
+            // 終了
+            this.setMoveType("end");
+        }
 
-        SceneManager.LoadScene("ResultScene");
+        private IEnumerator changeScene()
+        {
+            yield return new WaitForSeconds (3.0f);
+
+            parameterController.setCameraRotate(Camera.main.transform.localEulerAngles);
+
+            SceneManager.LoadScene("ResultScene");
+        }
     }
 }
